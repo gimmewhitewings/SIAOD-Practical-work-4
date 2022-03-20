@@ -18,7 +18,8 @@ void printTable(Table& table, MaxStrLen& maxLen);
 Movie createInfo(MaxStrLen& maxLen);
 void insertInfo(Movie info, Table& table);
 int deleteInfo(Table& table);
-void createCinemaList(Table& table);
+void createCinemaList(Table& table, string filmName, int* cinemaCounter);
+void printArray(string* array, int size);
 
 void main()
 {
@@ -30,6 +31,8 @@ void main()
 
 	int userChoice = -1;
 	int deletedInfo = 0;
+	int cinemaCounter = 0;
+	string filmName;
 
 	while (userChoice != 0)
 	{
@@ -50,8 +53,15 @@ void main()
 			deletedInfo = deleteInfo(table);
 			if (deletedInfo != 0)
 			{
-				cout << "Удалено " << deletedInfo << " записей";
+				cout << "Удалено " << deletedInfo << " записей" << endl;
 			}
+			system("pause");
+			break;
+		case 3:
+			cout << "Список кинотетаров, в которых можно посмотреть заданный фильм." << endl;
+			cout << "Какой фильм вы хотите посмотреть? : ";
+			getline(cin, filmName);
+			createCinemaList(table, filmName, &cinemaCounter);
 			system("pause");
 			break;
 		case 0:
@@ -76,13 +86,14 @@ void printMenu(Table& table, MaxStrLen& maxLen)
 	cout << endl;
 	cout << "Введите 1, чтобы внести информацию о сеансе.\n"
 		"Введите 2, чтобы удалить записи по заданной дате.\n"
-		"Введите 3, чтобы вывести список кинотеатров, в которых можно посмотреть заданный фильм\n";
+		"Введите 3, чтобы вывести список кинотеатров, в которых можно посмотреть заданный фильм.\n"
+		"Введите 0, чтобы закончить проверку.\n";
 	cout << "Выш выбор: ";
 }
 
 void printTable(Table& table, MaxStrLen& maxLen)
 {
-	string cinemaStr = "Кинотеатр ", movieStr = "Фильм ", priceStr = "Цена ";
+	string cinemaStr = "Кинотеатр", movieStr = "Фильм", priceStr = "Цена";
 	maxLen.cinema = max(maxLen.cinema, cinemaStr.length());
 	maxLen.movie = max(maxLen.movie, movieStr.length());
 	maxLen.price = max(maxLen.price, priceStr.length());
@@ -94,30 +105,34 @@ void printTable(Table& table, MaxStrLen& maxLen)
 		string sep = "| ";
 
 		cout << endl;
-		cout << setfill('-') << setw(headerLen) << endl;
+		cout << setfill('-') << setw(headerLen) << ' ' << endl;
+		cout << setfill(' ');
 		cout << sep << setw(maxLen.cinema) << cinemaStr;
 		cout << sep << setw(maxLen.movie) << movieStr;
 		cout << sep << setw(10) << "Дата ";
-		cout << sep << setw(8) << "Время ";
+		cout << sep << setw(5) << "Время";
 		cout << sep << setw(maxLen.price) << priceStr;
 		cout << sep << endl;
-		cout << setfill('-') << setw(headerLen) << endl;
+		cout << setfill('-') << setw(headerLen) << ' ' << endl;
+		cout << setfill(' ');
 
 		for (size_t i = 0; i < table.tableSize; i++)
 		{
 			cout << sep << setw(maxLen.cinema) << table.infoList[i].cinemaName;
 			cout << sep << setw(maxLen.movie) << table.infoList[i].movieName;
-			cout << sep << setw(10) << table.infoList[i].date.day / 10 
+			cout << sep << table.infoList[i].date.day / 10 
 				<< table.infoList[i].date.day % 10 << '.' 
 				<< table.infoList[i].date.month / 10 
 				<< table.infoList[i].date.month % 10 << '.'
 				<< table.infoList[i].date.year;
-			cout << sep << setw(5) << table.infoList[i].time.minute / 10  
-				<< table.infoList[i].time.minute % 10 << ':' 
-				<< table.infoList[i].time.hour;
+			cout << sep << table.infoList[i].time.hour / 10
+				<< table.infoList[i].time.hour % 10 << ':'
+				<< table.infoList[i].time.minute / 10
+				<< table.infoList[i].time.minute % 10;
 			cout << sep << setw(maxLen.price) << table.infoList[i].price;
 			cout << sep << endl;
-			cout << setfill('-') << setw(headerLen) << endl;
+			cout << setfill('-') << setw(headerLen) << ' ' << endl;
+			cout << setfill(' ');
 		}
 	}
 	else
@@ -143,6 +158,8 @@ Movie createInfo(MaxStrLen& maxLen)
 	cin >> newMovie.time.hour;
 	cout << "Введите минуту начала сеанса: ";
 	cin >> newMovie.time.minute;
+	cout << "Введите стоимость билета: ";
+	cin >> newMovie.price;
 
 	maxLen.cinema = max(newMovie.cinemaName.length(), maxLen.cinema);
 	maxLen.movie = max(newMovie.movieName.length(), maxLen.cinema);
@@ -161,19 +178,21 @@ void insertInfo(Movie info, Table& table)
 			if (info.cinemaName == table.infoList[i].cinemaName)
 			{
 				flag = true;
-				for (size_t j = table.tableSize - 1; j < 0; j--)
+				for (size_t j = table.tableSize; j > i; j--)
 				{
-					table.infoList[i + 1] = table.infoList[i];
+					table.infoList[j] = table.infoList[j - 1];
 				}
 				table.infoList[i] = info;
 				break;
 			}
 		}
 	}
-	else if (table.tableSize == 0 || !flag)
+
+	if (table.tableSize == 0 || !flag)
 	{
 		table.infoList[table.tableSize] = info;
 	}
+
 	table.tableSize++;
 }
 
@@ -182,12 +201,12 @@ int deleteInfo(Table& table)
 	int day, month, year;
 	int deletedInfo = 0;
 
-	cout << "Введите год: ";
-	cin >> year;
-	cout << "Введите месяц: ";
-	cin >> month;
 	cout << "Введите день: ";
 	cin >> day;
+	cout << "Введите месяц: ";
+	cin >> month;
+	cout << "Введите год: ";
+	cin >> year;
 
 	for (size_t i = 0; i < table.tableSize; i++)
 	{
@@ -197,11 +216,12 @@ int deleteInfo(Table& table)
 			comparableDate.month == month &&
 			comparableDate.day == day)
 		{
-			for (size_t j = i; j < table.tableSize - 1; j--)
+			for (size_t j = i; j < table.tableSize - 1; j++)
 			{
 				table.infoList[j] = table.infoList[j + 1];
 			}
 			table.tableSize--;
+			i--;
 			deletedInfo++;
 		}
 	}
@@ -209,13 +229,48 @@ int deleteInfo(Table& table)
 	return deletedInfo;
 }
 
-void createCinemaList(Table& table)
+void createCinemaList(Table& table, string filmName, int* cinemaCounter)
 {
 	string cinemaList[100];
-	int cinemaCounter = 0;
+	bool flag = true;
 
-	for (size_t i = 0; i < length; i++)
+	for (size_t i = 0; i < table.tableSize; i++)
 	{
+		if (table.infoList[i].movieName == filmName)
+		{
+			flag = true;
 
+			for (size_t j = 0; j < *cinemaCounter; j++)
+			{
+				if (table.infoList[i].cinemaName == cinemaList[j])
+				{
+					flag = false;
+				}
+			}
+
+			if (flag)
+			{
+				cinemaList[*cinemaCounter] = table.infoList[i].cinemaName;
+				*cinemaCounter += 1;
+			}
+		}
+	}
+
+	if (*cinemaCounter != 0)
+	{
+		cout << "Посмотреть данный фильм вы можете в следующих кинотеатрах: " << endl;
+		printArray(cinemaList, *cinemaCounter);
+	}
+	else
+	{
+		cout << "К сожалению, не нашлось кинотетатров, в которых можно посмотреть данный фильм." << endl;
+	}
+}
+
+void printArray(string* array, int size)
+{
+	for (size_t i = 0; i < size; i++)
+	{
+		cout << array[i] << endl;
 	}
 }

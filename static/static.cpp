@@ -170,6 +170,7 @@ Movie createInfo(MaxStrLen& maxLen)
 
 void insertInfo(Movie info, Table& table)
 {
+	bool flag = true;
 	if (table.tableSize != 0)
 	{
 		for (size_t i = 0; i < table.tableSize; i++)
@@ -181,11 +182,14 @@ void insertInfo(Movie info, Table& table)
 					table.infoList[j] = table.infoList[j - 1];
 				}
 				table.infoList[i] = info;
-				return;
+				flag = false;
 			}
 		}
 	}
-	table.infoList[table.tableSize] = info;
+	if (table.tableSize == 0 || flag)
+	{
+		table.infoList[table.tableSize] = info;
+	}
 	table.tableSize++;
 }
 
